@@ -8,12 +8,12 @@ var options = {
     minute: 'numeric',
     second: 'numeric'
 };
-var JobStatics = {
-    bgcolor: "#c9cadc",
-    icon: "fas fa-briefcase fa-3x",
+var Statics = {
+    bgcolor: "#c4d1cf",
+    icon: "far fa-calendar-alt fa-3x",
 }
 
-function JobTile() {
+function EventTile() {
     url = "defaultcontenturl", // auto? // parametrized?
         token = "defaulttoken",
         name = "defaultname",
@@ -28,8 +28,8 @@ function JobTile() {
 
 
 
-JobTile.prototype.render = function () {
-         var jobtileinstance = this;
+EventTile.prototype.render = function () {
+         var eventtileinstance = this;
 
     function setAuthHeader(request) {
        // console.log(this);
@@ -39,11 +39,7 @@ JobTile.prototype.render = function () {
     };
 
     function generateUrl() {
-      //  alert("strzala!!" + JSON.stringify(this) + $('#updatedat').val() );
-     // console.log(request);
-      //return this.jobtileinstance.url;
-      //console.log(this);
-      return jobtileinstance.indexurl+"/"+ $('#updatedat').val();
+          return eventtileinstance.indexurl+"/"+ $('#updatedat').val();
     };
 
 
@@ -60,20 +56,20 @@ JobTile.prototype.render = function () {
             $("<div/>")
             .addClass("cms-boxes-items cms-features")
             .css({
-                "background-color": JobStatics.bgcolor
+                "background-color": Statics.bgcolor
             })
             .append(
                 $("<div/>")
                 .addClass("boxes-align")
                 .attr("id", this.indexurl +"/"+this.updatedat ) // this id is used for single instance data grab !!!
                 .attr("data-toggle", "modal")
-                .attr("data-target", "#expandedTile")
+                .attr("data-target", "#EventexpandedTile")
                 .append(
                     $("<div/>")
                     .addClass("small-box")
                     .append(
                         $("<i/>")
-                        .addClass(JobStatics.icon)
+                        .addClass(Statics.icon)
                     )
                     .append(
                         $("<h3/>")
@@ -92,11 +88,11 @@ JobTile.prototype.render = function () {
                         .text("Created: " + parsedcreatedat)
                     )))));
     // create inner modal
-    if (document.getElementById('expandedTile') === null) {
+    if (document.getElementById('EventexpandedTile') === null) {
         $('body').append(
             $('<div/>')
             .addClass("modal fade")
-            .attr("id", "expandedTile")
+            .attr("id", "EventexpandedTile")
             .attr("role", "dialog")
             .append(
                 $('<div/>')
@@ -202,8 +198,8 @@ JobTile.prototype.render = function () {
                             .addClass("btn btn-info")
                             .attr("type", "button")
                             .attr("data-toggle", "modal")
-                            .attr("data-target", "#createform")
-                            .attr("id", "eventedit")
+                            .attr("data-target", "#eventcreateform")
+                            .attr("id", "eeventedit")
                             .text("Edit")
                         )
                     )
@@ -219,13 +215,13 @@ JobTile.prototype.render = function () {
                     $.ajax({
                       // id/file name is known and set in currentrespopnse.name, when widget content is shown
                       url: generateUrl()+ currentresponse.name,
-                      beforeSend: setAuthHeader.bind(jobtileinstance),
+                      beforeSend: setAuthHeader.bind(eventtileinstance),
                       type: 'DELETE',
                       //sha is known when widget content is shown (after specific widget api call)
                       data: '{"message": "delete file","sha":"' + currentresponse.sha + '" }',
                       success: function (data) {
                         // hide widget details modal after deletion (since source is no longer in repo)
-                        $('#expandedTile').modal('hide');
+                        $('#EventexpandedTile').modal('hide');
                       }
                     });
                   });
@@ -236,7 +232,7 @@ JobTile.prototype.render = function () {
         e.stopImmediatePropagation(); // multiple event listeners are added !! can it stay as workaround ?
         $.ajax({
                 url: $(this).attr('id'),
-                beforeSend: setAuthHeader.bind(jobtileinstance),
+                beforeSend: setAuthHeader.bind(eventtileinstance),
                 dataType: 'json',
                 success: function (response) {
                     // populate details modal and show it to user
@@ -250,7 +246,7 @@ JobTile.prototype.render = function () {
                     document.getElementById('currentPhoto').src = unencodedcontent.picture;
                     document.getElementById('mailbutton').href = 'mailto:' + unencodedcontent.email;
                     document.getElementById('description').innerHTML = unencodedcontent.description;
-                    $('#expandedTile').modal('show');
+                    $('#EventexpandedTile').modal('show');  // doesnt show because of multiple event listeners !!!!!
                 }
             })
             .fail(function () {
@@ -258,11 +254,11 @@ JobTile.prototype.render = function () {
             });
     });
     /// create form modal
-    if (document.getElementById('createform') === null) {
+    if (document.getElementById('eventcreateform') === null) {
         $('body').append(
             $('<div/>')
             .addClass("modal fade")
-            .attr("id", "createform")
+            .attr("id", "eventcreateform")
             .attr("role", "dialog")
             .append(
                 $('<div/>')
@@ -291,7 +287,7 @@ JobTile.prototype.render = function () {
                         .append(
                             $('<form/>')
                             .addClass("form-style-5")
-                            .attr("id", "job_create_form")
+                            .attr("id", "event_create_form")
 
                             .append(
                                 $('<input>')
@@ -359,67 +355,15 @@ JobTile.prototype.render = function () {
                             )
                             .append(
                                 $('<p/>')
-                                .text("Job type:")
+                                .text("Event date:")
 
 
                             )
                             .append(
-                                $('<p/>')
-                                .append(
-                                    $('<input/>')
-                                    .attr("value", "Employment")
-                                    .attr("name", "jobtype")
-                                    .attr("type", "radio")
-                                    .attr("checked", "true")
-
-                                )
-                                .append(
-                                    $('<p/>')
-                                .text("Employment")
-                                )
-                                .append(
-                                    $('<input/>')
-                                    .attr("value", "Training")
-                                    .attr("name", "jobtype")
-                                    .attr("type", "radio")
-                                )
-                                .append(
-                                    $('<p/>')
-                                .text("Training")
-                                )
-                                .append(
-                                    $('<input/>')
-                                    .attr("value", "Internship")
-                                    .attr("name", "jobtype")
-                                    .attr("type", "radio")
-
-                                )
-                                .append(
-                                    $('<p/>')
-                               .text("Internship")
-                                )
-                                .append(
-                                    $('<input/>')
-                                    .attr("value", "Master")
-                                    .attr("name", "jobtype")
-                                    .attr("type", "radio")
-
-                                )
-                                .append(
-                                    $('<p/>')
-                                .text("Master")
-                                )
-                                .append(
-                                    $('<input/>')
-                                    .attr("value", "PhD")
-                                    .attr("name", "jobtype")
-                                    .attr("type", "radio")
-
-                                )
-                                .append(
-                                    $('<p/>')
-                                .text("PhD")
-                                )
+                                $('<input>')
+                                .attr("id", "eventdate")
+                                .attr("name", "eventdate")
+                                .attr("type", "date")
                             )
 
 
@@ -444,7 +388,7 @@ JobTile.prototype.render = function () {
                         )
                     )
                 )))
-                $('#createform').on('submit', function (e) {
+                $('#eventcreateform').on('submit', function (e) {
                     e.preventDefault();
                     // get event type from radio button
                     var typesradio = document.getElementsByName('type');
@@ -454,16 +398,7 @@ JobTile.prototype.render = function () {
                         break;
                       }
                     }
-                    // if type is event or training, read date field, if it is job, read job type field
-                    var jobtype;
 
-                      var jobtypesradio = document.getElementsByName('jobtype');
-                      for (var j = 0, l = jobtypesradio.length; i < l; i++) {
-                        if (jobtypesradio[i].checked) {
-                            jobtype = jobtypesradio[i].value;
-                          break;
-                        }
-                      }
 
                     // produce content of widget instance
                     var content = {};
@@ -472,22 +407,22 @@ JobTile.prototype.render = function () {
                     content.email = $('#emailaddress').val();
                     content.updatedat = $('#updatedat').val();
                     content.createdat = $('#createdat').val();
-                    content.datetype = jobtype;
-                    content.type = "JobTile";               // can take this from somewhere
+                    content.datetype = $('#eventdate').val();;
+                    content.type = "EventTile";               // can take this from somewhere
                     content.name = $('#filename').val();
                     // create file storing content with api call
                     $.ajax({
                       url: generateUrl(), // update date acts as unique id (file name in repo)
-                      beforeSend: setAuthHeader.bind(jobtileinstance),
+                      beforeSend: setAuthHeader.bind(eventtileinstance),
                       type: 'PUT',
                       data: '{"message": "create file","content":"' + btoa(JSON.stringify(content)) + '" }',
                       success: function (data) {
-                        $('#createform').modal('hide');
+                        $('#eventcreateform').modal('hide');
                         if (content.updatedat !== content.createdat) {
 
                           $.ajax({
                             url: this.url.replace(this.url.split("/")[this.url.split("/").length-1], currentresponse.name),
-                            beforeSend: setAuthHeader.bind(jobtileinstance),
+                            beforeSend: setAuthHeader.bind(eventtileinstance),
                             type: 'DELETE',
                             data: '{"message": "delete file","sha":"' + currentresponse.sha + '" }',
                             success: function (data) {
@@ -524,7 +459,7 @@ JobTile.prototype.render = function () {
   });
 
     // handle edit form preparation
-    $('#eventedit').on('click', function (e) {
+    $('#eeventedit').on('click', function (e) {
         // populate form with static fields
         updatedat = new Date().getTime();
         e.preventDefault();
@@ -534,20 +469,10 @@ JobTile.prototype.render = function () {
         document.getElementById("filecontent").value = unencodedcontent.description;
         document.getElementById("emailaddress").value = unencodedcontent.email;
         document.getElementById("eventpicture").value = unencodedcontent.picture;
-
-        var typeseditedradionew = document.getElementsByName('jobtype');
-        for (var j = 0, l = typeseditedradionew.length; j < l; j++) {
-          if (unencodedcontent.datetype === typeseditedradionew[j].value) {
-            typeseditedradionew[j].checked = true;
-            break;
-          }
-        }
-
       });
-
-
 };
-JobTile.prototype.setContent = function (content) {
+
+EventTile.prototype.setContent = function (content) {
     this.indexurl = (content.indexurl || '');
     this.indexfilename = (content.indexfilename || '');
     this.name = (content.name || '');
@@ -557,4 +482,4 @@ JobTile.prototype.setContent = function (content) {
     this.datetype = (content.datetype || '');
     this.token = (content.token || '');
 };
-Olive.widgets.add(JobTile);
+Olive.widgets.add(EventTile);
