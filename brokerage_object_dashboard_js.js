@@ -11,7 +11,7 @@ var Olive = {
    },
 };
 
-// instantiate dashboard on button click with predefined url/token
+// instantiate dashboard on button click with provided url/token
 $(function () {
 
 // add modal to get url and token
