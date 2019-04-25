@@ -1,6 +1,13 @@
 Olive = (function (config = {}) {
     var widgetlist = [];
     var instancelist = [];
+    var optionsModal = document.createElement('div');
+    var widgetAddButton = document.createElement('button');
+    var optionsModalSubmitButton = document.createElement('button');
+    var indexfilename = document.createElement('input');
+    var token = document.createElement('input');
+    var url = document.createElement('input');
+    var gridinstance;
     var widgets = {
         add: function (widget) {
             widgetlist.push(widget);
@@ -18,18 +25,9 @@ Olive = (function (config = {}) {
             return instancelist;
         }
     };
-
-    var optionsModal;
-    var widgetAddButton;
-    var optionsModalSubmitButton = document.createElement('button');
-    var indexfilename = document.createElement('input');
-    var token = document.createElement('input');
-    var url = document.createElement('input');
-
     function addOptionsModal() {
-         optionsModal = document.createElement('div');
-        $(optionsModal)
-            .prependTo($(document.body))
+            $(optionsModal)
+                .prependTo($(document.body))
             .addClass("modal fade")
             .attr("role", "dialog")
             .append(
@@ -103,66 +101,45 @@ Olive = (function (config = {}) {
                     )
                 ));
     }
-
-
     function addWidgetAddButton() {
-         widgetAddButton = document.createElement('button');
         $(widgetAddButton)
             .appendTo($(document.body))
             .addClass("btn btn-warning")
-            .text("Add widget");
-    }
-
-    function addWidgetAddButtonClickHandler(){
-        $(widgetAddButton).click(function () {
-            $(optionsModal).modal('show');
-          });
-
-    }
-
-
-    function addHandleOptionsModalSubmission() {
-        $(optionsModalSubmitButton).click(function (e) {
-e.preventDefault();
-            // instantiate grid with passed parameters
-            var gridinstance;
-            widgetlist.forEach(function (entry) {
-                if (entry.type === "Grid") {
-                    gridinstance = Object.assign({}, entry);
-                    return;
-                }
+            .text("Add widget")
+            .click(function () {
+                $(optionsModal).modal('show');
             });
-            config.indexurl = $(url).val();
-            config.token = $(token).val();
-            config.indexfilename = $(indexfilename).val();
-            gridinstance.setContent(config);
-            // get grid data from passed endpoint
-            gridinstance.getData();
-            //  console.log(gridinstance.getDataAjax);
-            $.when(gridinstance.getDataAjax).done(function () { // not very nice to use ajax declared as global variable :(
-                // render grid elements
-                gridinstance.render();
-            });
-            // add  grid instance to global widget instance list
-            Olive.addInstance(gridinstance);
-            $(optionsModal).modal('hide');
+    }
+    function instantiateGrid() {
+        widgetlist.forEach(function (entry) {
+            if (entry.type === "Grid") { // hardcoded name for "Grid" type - assume having one ??
+                gridinstance = Object.assign({}, entry);
+            }
         });
     }
-
-
+    function readAndSetGridConfig() {
+        config.indexurl = $(url).val();
+        config.token = $(token).val();
+        config.indexfilename = $(indexfilename).val();
+        gridinstance.setContent(config);
+    }
+    function getAndRenderGridData() {
+        gridinstance.getData();
+        $.when(gridinstance.getDataAjax).done(function () {
+            gridinstance.render();
+        });
+    }
+    $(optionsModalSubmitButton).click(function (e) {
+        e.preventDefault();
+        instantiateGrid();
+        readAndSetGridConfig();
+        getAndRenderGridData();
+        Olive.addInstance(gridinstance);
+        $(optionsModal).modal('hide');
+    });
     $(function () {
-
-
-        if ($.trim($('body').html())==''){
-            addOptionsModal();
-            addWidgetAddButton();
-            addWidgetAddButtonClickHandler();
-            addHandleOptionsModalSubmission();
-          }
-
-
-
-
+        addOptionsModal();
+        addWidgetAddButton();
     });
     return widgets;
 })();

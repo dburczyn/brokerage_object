@@ -1,23 +1,36 @@
-(function (Olive) {
-    var locale = "en-GB";
-    var localeOptions = {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: 'numeric',
-        second: 'numeric'
-    };
+(function (Grid,Olive) {
     var jobStatics = {
         bgcolor: "#c9cadc",
         icon: "fas fa-briefcase fa-3x",
+        localeOptions: {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: 'numeric',
+            minute: 'numeric',
+            second: 'numeric'
+        },
+        locale: "en-GB"
     };
     var currentresponse;
     var unencodedcontent;
     var jobtileinstance;
+    var widgetRepresentation;
+    var filecontentfield = document.createElement('input');
+    var eventpicturefield = document.createElement('input');
+    var emailaddressfield = document.createElement('input');
+    var createdatfield = document.createElement('input');
+    var updatedatfield = document.createElement('input');
+    var filenamefield = document.createElement('input');
+    var createform = document.createElement('div');
+    var expandedWidgetView = document.createElement('div');
+
+
+
+
     var job = {
-        url: "defaultcontenturl", // auto? // parametrized?
+        url: "defaultcontenturl",
         token: "defaulttoken",
         name: "defaultname",
         type: "JobTile",
@@ -35,15 +48,24 @@
             this.token = (content.token || '');
         },
         render: function () {
+            widgetRepresentation = document.createElement('div');
             jobtileinstance = this;
             createFrontWidgetTile();
-            addShowInnerWidgetModalHandler();
+         //   console.log(jobtileinstance);
+
             addNewButtonHandler();
+           // createInnerWidgetModal();
+          //  console.log(widgetRepresentation);
+            return widgetRepresentation;
         }
     };
+
     function setWidgetAuthHeader(request) {
-        request.setRequestHeader("Authorization", "token " + Olive.getConfig().token);
+
+            request.setRequestHeader("Authorization", "token " + Olive.getConfig().token);
+
     }
+
     function getJobtypeFromRadio() {
         var jobtype;
         var jobtypesradio = document.getElementsByName('jobtype');
@@ -55,24 +77,25 @@
         }
         return jobtype;
     }
+
     function produceWidgetInstanceContent() {
         widgetInstanceContent = {};
-        widgetInstanceContent.description = $('#filecontent').val();
-        widgetInstanceContent.picture = $('#eventpicture').val();
-        widgetInstanceContent.email = $('#emailaddress').val();
-        widgetInstanceContent.createdat = $('#createdat').val();
-        widgetInstanceContent.updatedat = $('#updatedat').val();
+        widgetInstanceContent.description = $(filecontentfield).val();
+        widgetInstanceContent.picture = $(eventpicturefield).val();
+        widgetInstanceContent.email = $(emailaddressfield).val();
+        widgetInstanceContent.createdat = $(createdatfield).val();
+        widgetInstanceContent.updatedat = $(updatedatfield).val();
         widgetInstanceContent.datetype = getJobtypeFromRadio();
         widgetInstanceContent.type = jobtileinstance.type;
-        widgetInstanceContent.name = $('#filename').val();
+        widgetInstanceContent.name = $(filenamefield).val();
         return widgetInstanceContent;
     }
+
     function makeCreateForm() {
-        $("#createform").remove();
-        $('body').append(
-            $('<div/>')
+
+           $(widgetRepresentation) .append(
+            $(createform)
             .addClass("modal fade")
-            .attr("id", "createform")
             .attr("role", "dialog")
             .append(
                 $('<div/>')
@@ -101,18 +124,13 @@
                         .append(
                             $('<form/>')
                             .addClass("form-style-5")
-                            .attr("id", "job_create_form")
                             .append(
-                                $('<input>')
-                                .attr("id", "createdat")
-                                .attr("name", "createdat")
+                                $(createdatfield)
                                 .attr("type", "text")
                                 .attr("hidden", "true")
                             )
                             .append(
-                                $('<input>')
-                                .attr("id", "updatedat")
-                                .attr("name", "updatedat")
+                                $(updatedatfield)
                                 .attr("type", "text")
                                 .attr("hidden", "true")
                             )
@@ -121,9 +139,7 @@
                                 .text("Name:")
                             )
                             .append(
-                                $('<input>')
-                                .attr("id", "filename")
-                                .attr("name", "filename")
+                                $(filenamefield)
                                 .attr("type", "text")
                             )
                             .append(
@@ -131,9 +147,7 @@
                                 .text("Description:")
                             )
                             .append(
-                                $('<input>')
-                                .attr("id", "filecontent")
-                                .attr("name", "filecontent")
+                                $(filecontentfield)
                                 .attr("type", "text")
                             )
                             .append(
@@ -141,9 +155,7 @@
                                 .text("Picture:")
                             )
                             .append(
-                                $('<input>')
-                                .attr("id", "eventpicture")
-                                .attr("name", "eventpicture")
+                                $(eventpicturefield)
                                 .attr("type", "text")
                             )
                             .append(
@@ -151,10 +163,8 @@
                                 .text("Contact:")
                             )
                             .append(
-                                $('<input>')
-                                .attr("id", "emailaddress")
-                                .attr("name", "emailaddress")
-                                .attr("type", "email")
+                                $(emailaddressfield)
+                                .attr("type", "text")
                             )
                             .append(
                                 $('<p/>')
@@ -234,9 +244,11 @@
                     )
                 )));
     }
+
     function prepareDeleteWidgetContentUrl() {
         return Olive.getConfig().indexurl + "/" + currentresponse.name;
     }
+
     function deleteWidgetContentFile() {
         $.ajax({
                 url: prepareDeleteWidgetContentUrl(),
@@ -245,12 +257,14 @@
                 data: '{"message": "delete file","sha":"' + currentresponse.sha + '" }',
             })
             .done(function () {
-                $('#expandedTile').modal('hide');
+                $(expandedWidgetView).modal('hide');
             });
     }
+
     function prepareCreateWidgetContentUrl() {
         return Olive.getConfig().indexurl + '/' + widgetInstanceContent.updatedat;
     }
+
     function createWidgetContentFile() {
         produceWidgetInstanceContent();
         $.ajax({
@@ -260,24 +274,25 @@
                 data: '{"message": "create file","content":"' + btoa(JSON.stringify(widgetInstanceContent)) + '" }',
             })
             .done(function () {
-                $('#createform').modal('hide');
+                $(createform).modal('hide');
                 if (widgetInstanceContent.updatedat !== widgetInstanceContent.createdat) {
                     deleteWidgetContentFile();
                 }
             });
     }
+
     function addCreateFormSubmitHandler() {
-        $('#createform').on('submit', function (e) {
+        $(createform).on('submit', function (e) {
             e.preventDefault();
             createWidgetContentFile();
         });
     }
+
     function createFrontWidgetTile() {
         //console.log(Olive);
-        var parsedcreatedat = new Date(parseInt(jobtileinstance.createdat)).toLocaleDateString(locale, localeOptions);
-        var parsedupdatedat = new Date(parseInt(jobtileinstance.updatedat)).toLocaleDateString(locale, localeOptions);
-        $('#' + Olive.getConfig().indexfilename + jobtileinstance.type + 'container').append(
-            $('<div/>')
+        var parsedcreatedat = new Date(parseInt(jobtileinstance.createdat)).toLocaleDateString(jobStatics.locale, jobStatics.localeOptions);
+        var parsedupdatedat = new Date(parseInt(jobtileinstance.updatedat)).toLocaleDateString(jobStatics.locale, jobStatics.localeOptions);
+        $(widgetRepresentation)
             .addClass("col-md-3 cms-boxes-outer")
             .append(
                 $("<div/>")
@@ -288,9 +303,12 @@
                 .append(
                     $("<div/>")
                     .addClass("boxes-align")
-                    .attr("id", jobtileinstance.updatedat) // this id is used for single instance data grab !!!
-                    .attr("data-toggle", "modal")
-                    .attr("data-target", "#expandedTile")
+                    .attr("id",jobtileinstance.updatedat)
+
+    .on('click', function () {
+        showInnerWidgetModal($(this).attr("id"));
+    })
+
                     .append(
                         $("<div/>")
                         .addClass("small-box")
@@ -313,15 +331,15 @@
                         .append(
                             $("<h5/>")
                             .text("Created: " + parsedcreatedat)
-                        )))));
+                        ))));
+
     }
+
     function createInnerWidgetModal() {
-        $("#expandedTile").remove();
-        $('body').append(
-            $('<div/>')
+        $(widgetRepresentation) .append(
+            $(expandedWidgetView)
             .addClass("modal fade")
-            .attr("id", "expandedTile")
-            .attr("role", "dialog")
+           .attr("role", "dialog")
             .append(
                 $('<div/>')
                 .addClass("modal-dialog")
@@ -340,8 +358,7 @@
                         )
                         .append(
                             $('<img>')
-                            .attr("id", "currentPhoto")
-                            .attr("src", unencodedcontent.picture)
+                           .attr("src", unencodedcontent.picture)
                         )
                     )
                     .append(
@@ -350,7 +367,6 @@
                         .append(
                             $("<h1/>")
                             .addClass("modal-title")
-                            .attr("id", "modal-title")
                             .css({
                                 "text-align": "center"
                             })
@@ -358,7 +374,6 @@
                         )
                         .append(
                             $("<h2/>")
-                            .attr("id", "datetype")
                             .css({
                                 "text-align": "center"
                             })
@@ -366,14 +381,12 @@
                         )
                         .append(
                             $("<p/>")
-                            .attr("id", "description")
-                            .text(unencodedcontent.description)
+                         .text(unencodedcontent.description)
                         )
                         .append(
                             $("<p/>")
                             .append(
                                 $("<a/>")
-                                .attr("id", "mailbutton")
                                 .attr("href", 'mailto:' + unencodedcontent.email)
                                 .addClass("btn btn-primary")
                                 .css({
@@ -392,8 +405,7 @@
                             )
                             .append(
                                 $("<time/>")
-                                .attr("id", "dateofupdate")
-                                .text(new Date(parseInt(unencodedcontent.updatedat)).toLocaleDateString(locale, localeOptions))
+                                .text(new Date(parseInt(unencodedcontent.updatedat)).toLocaleDateString(jobStatics.locale, jobStatics.localeOptions))
                             )
                         )
                         .append(
@@ -404,8 +416,7 @@
                             )
                             .append(
                                 $("<time/>")
-                                .attr("id", "dateofcreate")
-                                .text(new Date(parseInt(unencodedcontent.createdat)).toLocaleDateString(locale, localeOptions))
+                                .text(new Date(parseInt(unencodedcontent.createdat)).toLocaleDateString(jobStatics.locale, jobStatics.localeOptions))
                             )
                         )
                     )
@@ -423,67 +434,90 @@
                             $('<button/>')
                             .addClass("btn btn-default")
                             .attr("type", "button")
-                            .attr("id", "eventdelete")
                             .text("Delete")
+                            .on('click', function (e) {
+                                var action = confirm('Are you sure you wish to delete this item ? It cannot be undone!');
+                                if (action === false) {
+                                    return false;
+                                }
+                                deleteWidgetContentFile();
+                            })
+
                         )
                         .append(
                             $('<button/>')
                             .addClass("btn btn-info")
                             .attr("type", "button")
                             .attr("data-toggle", "modal")
-                            .attr("data-target", "#createform")
-                            .attr("id", "eventedit")
+                            .attr("data-target", createform)
                             .text("Edit")
+                            .on('click', function (e) {
+                                e.stopPropagation();
+                                createform = document.createElement('div');
+                                makeCreateForm();
+                                addCreateFormSubmitHandler();
+                                populateEditForm();
+                                $(createform).modal('show');
+                            })
                         )
                     )
                 )));
     }
+
+
+
+
+
     function addNewButtonHandler() {
-        $('#' + Olive.getConfig().indexfilename + jobtileinstance.type)
+        $(Grid.addbutton)
             .unbind('click')
             .on('click', function (e) {
                 e.stopPropagation();
+                createform = document.createElement('div');
                 makeCreateForm();
                 addCreateFormSubmitHandler();
-                $("#createdat").val(new Date().getTime());
-                $("#updatedat").val($("#createdat").val());
-                $('#createform').modal('show');
+                $(createdatfield).val(new Date().getTime());
+                $(updatedatfield).val($(createdatfield).val());
+                $(createform).modal('show');
             });
     }
+
+
+
+
+
+
+
     function populateEditForm() {
+
         updatedat = new Date().getTime();
-        document.getElementById("updatedat").value = updatedat;
-        document.getElementById("createdat").value = unencodedcontent.createdat;
-        document.getElementById("filename").value = unencodedcontent.name;
-        document.getElementById("filecontent").value = unencodedcontent.description;
-        document.getElementById("emailaddress").value = unencodedcontent.email;
-        document.getElementById("eventpicture").value = unencodedcontent.picture;
+        $(updatedatfield).val(updatedat);
+        $(createdatfield).val(unencodedcontent.createdat);
+        $(filenamefield).val(unencodedcontent.name);
+        $(filecontentfield).val(unencodedcontent.description);
+        $(emailaddressfield).val(unencodedcontent.email);
+        $(eventpicturefield).val(unencodedcontent.picture);
         var typeseditedradionew = document.getElementsByName('jobtype');
         for (var j = 0, l = typeseditedradionew.length; j < l; j++) {
+
             if (unencodedcontent.datetype === typeseditedradionew[j].value) {
+                console.log("found: " + unencodedcontent.datetype);
                 typeseditedradionew[j].checked = true;
                 break;
             }
         }
+
+
+
+        console.log("form populated");
     }
-    function addEditButtonHandler() {
-        $('#eventedit').on('click', function (e) {
-            e.stopPropagation();
-            makeCreateForm();
-            addCreateFormSubmitHandler();
-            populateEditForm();
-            $('#createform').modal('show');
-        });
-    }
-    function addDeleteButtonHandler() {
-        $('#eventdelete').on('click', function (e) {
-            var action = confirm('Are you sure you wish to delete this item ? It cannot be undone!');
-            if (action === false) {
-                return false;
-            }
-            deleteWidgetContentFile();
-        });
-    }
+
+
+
+
+
+
+
     function showInnerWidgetModal(id) {
         $.ajax({
                 url: Olive.getConfig().indexurl + "/" + id,
@@ -493,22 +527,17 @@
             .done(function (response) {
                 currentresponse = response;
                 unencodedcontent = JSON.parse(atob(response.content));
+                expandedWidgetView = document.createElement('div');
                 createInnerWidgetModal();
-                $('#expandedTile').modal('show');
-                addDeleteButtonHandler();
-                addEditButtonHandler();
+                $(expandedWidgetView).modal('show');
+              //  addDeleteButtonHandler();
+             //   addEditButtonHandler();
             })
             .fail(function () {
                 alert('That entry is no longer avaliable');
             });
     }
-    function addShowInnerWidgetModalHandler() {
-        $('#' + jobtileinstance.updatedat)
-            .unbind('click')
-            .on('click', function (e) {
-                e.stopPropagation();
-                showInnerWidgetModal($(this).attr('id'));
-            });
-    }
+
+
     Olive.add(job);
-})(Olive);
+})(Grid,Olive);
