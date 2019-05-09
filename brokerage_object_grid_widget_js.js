@@ -1,4 +1,4 @@
-  Grid = (function (Olive) {
+   (function () {
     var widgetFileNames = [];
     var indexedListNames = [];
     var indexListobjToUpdate = {};
@@ -13,37 +13,22 @@
     var widgetlist;
     var instance;
     var widgetcontainer = document.createElement('div');
-    var widgetAddButton = document.createElement('button');
     var widgetcontainerinner = document.createElement('div');
-
     var grid = {
-      addbutton:widgetAddButton,
-      getDataAjax: {},
       type: "Grid",
-      indexurl: "defaultindexurl",
-      token: "defaulttoken",
-      indexfilename: "defaulttype",
-      setContent: function (content) {
-        this.indexurl = (content.indexurl || '');
-        this.token = (content.token || '');
-        this.indexfilename = (content.indexfilename || '');
-      },
-      getData: function () {
-        this.getDataAjax = $.ajax({
-          url: this.indexurl + "/" + this.indexfilename,
-          beforeSend: setAuthHeader.bind(this),
+      render: function (gridrendercontent) {
+        getDataAjax = $.ajax({
+          url: gridrendercontent.indexurl + "/" + gridrendercontent.indexfilename,
+          beforeSend: setAuthHeader.bind(gridrendercontent),
           dataType: 'json'
         }).done(function (response) {
           resultsJSON = [];
-          produceWidgetContent.call(this, response);
-          if ((typeof this.token !== 'undefined') && (this.token != "") && (this.token != "defaulttoken")) {
-            getListOfObjects(this); // used for creation/update of indexlist - only for admin = authenticated users
+          produceWidgetContent.call(null, response);
+          if ((typeof gridrendercontent.token !== 'undefined') && (gridrendercontent.token != "") && (gridrendercontent.token != "defaulttoken")) {
+            getListOfObjects(gridrendercontent); // used for creation/update of indexlist - only for admin = authenticated users
           }
-        }.bind(this));
-      },
-      render: function () {
+        });
         widgetlist = Olive.getWidgetList();
-        // produce array with widget widgetFileNames
         widgetlist.forEach(function (i) {
           if (typeof i.type !== 'undefined' && functionnames.indexOf(i.type) == -1) {
             functionnames.push(i.type);
@@ -51,14 +36,15 @@
         });
         functionnames.forEach(function (name) {
           if (name !== "Grid") { // hardcoded to not add grid add button/container
-            addWidgetButton.call(this, name);
-            addWidgetContainer();
+           addWidgetContainer();
           }
-        }.bind(this));
-        instantiateWidgets.call(this);
+        });
+        $.when(getDataAjax).done(function () {
+          instantiateWidgets(gridrendercontent);
+        });
+        return widgetcontainer;
       },
     };
-
     function setAuthHeader(request) {
       if ((typeof this.token !== 'undefined') && (this.token != "") && (this.token != "defaulttoken")) {
         request.setRequestHeader("Authorization", "token " + this.token);
@@ -69,7 +55,6 @@
         return a.indexOf(i) < 0;
       });
     };
-
     function arraysEqual(arr1, arr2) {
       if (arr1.length !== arr2.length)
         return false;
@@ -79,8 +64,7 @@
       }
       return true;
     }
-
-    function instantiateWidgets() {
+    function instantiateWidgets(gridrendercontent) {
       resultsJSON.forEach(function (widgetData) {
         if (functionnames.indexOf(widgetData.type) > -1) {
           widgetlist.forEach(function (widgetTypeName) {
@@ -88,16 +72,16 @@
               instance = Object.assign({}, widgetTypeName);
             }
           });
-          widgetData.token = this.token;
-          widgetData.indexurl = this.indexurl;
-          widgetData.indexfilename = this.indexfilename;
-          instance.setContent(widgetData);
-          Olive.addInstance(instance);
-          $(widgetcontainerinner).append(instance.render());   // here lands all content of widget instances
+          $(widgetcontainerinner).append(instance.render(widgetData, gridrendercontent)); // here lands all content of widget instances
         }
       });
+      widgetlist.forEach(function(i){
+        instance = Object.assign({}, i);
+        if (typeof instance.makeCreateButton === "function") {
+          instance.makeCreateButton(gridrendercontent);
+      }
+      });
     }
-
     function getListOfObjects(gridinstance) {
       $.ajax({
         url: gridinstance.indexurl,
@@ -114,8 +98,6 @@
         getDiffIndexList(gridinstance); // after having list of all widgetFileNames in repo, get list of indexed widgetFileNames
       });
     }
-
-
     // if no name on indexlist add object to indexlist
     function getDiffIndexList(gridinstance) {
       namesToAddToList = widgetFileNames.diff(indexedListNames);
@@ -135,7 +117,6 @@
         pushUpdatedIndexlist(gridinstance);
       });
     }
-
     function prepareUpdateList(response) {
       var content = atob(response.content);
       var unencodedcontentdiff = JSON.parse(content);
@@ -148,7 +129,14 @@
       });
     }
 
-    function prepareUpdatedIndexlist() {
+
+    function removeDuplicates(arr){
+      var unique_array = Array.from(new Set(arr));
+      return unique_array;
+  }
+
+
+    function prepareUpdatedIndexlist() {     // tutaj sie cos dzieje
       namesToDeleteFromList = indexedListNames.diff(widgetFileNames);
       updatedIndexList = {};
       updatedIndexList.list = unencodedcontent.list.concat(indexListobjToUpdate.list);
@@ -159,8 +147,14 @@
           }
         }
       }
-    }
 
+
+
+
+      console.log(updatedIndexList.list);
+      updatedIndexList.list=removeDuplicates(updatedIndexList.list);
+      console.log(updatedIndexList.list);
+    }
     function pushUpdatedIndexlist(args) {
       if (!arraysEqual(unencodedcontent.list, updatedIndexList.list)) {
         $.ajax({
@@ -172,14 +166,6 @@
         });
       }
     }
-
-    function addWidgetButton(name) {
-      $(widgetAddButton)
-        .appendTo($(widgetcontainer))
-        .addClass("btn btn-info")
-        .text('NEW ' + name);
-    }
-
     function addWidgetContainer() {
       $(widgetcontainer)
         .appendTo($(document.body))
@@ -192,18 +178,15 @@
             .addClass("container-fluid")
           ));
     }
-
     function produceWidgetContent(response) {
       listsha = response.sha;
       unencodedcontent = JSON.parse(atob(response.content));
       $.each(unencodedcontent.list, function (i, f) {
         resultsJSON.push(f);
-        indexedListNames.push(    // used in indexlist creation
+        indexedListNames.push( // used in indexlist creation
           f.updatedat
         );
-
-      }.bind(this));
+      });
     }
     Olive.add(grid);
-    return grid;
-  })(Olive);
+  })();

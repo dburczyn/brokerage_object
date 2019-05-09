@@ -1,6 +1,6 @@
-Olive = (function (config = {}) {
+Olive = (function () {
+    var config= {};
     var widgetlist = [];
-    var instancelist = [];
     var optionsModal = document.createElement('div');
     var widgetAddButton = document.createElement('button');
     var optionsModalSubmitButton = document.createElement('button');
@@ -12,22 +12,14 @@ Olive = (function (config = {}) {
         add: function (widget) {
             widgetlist.push(widget);
         },
-        addInstance: function (instance) {
-            instancelist.push(instance);
-        },
-        getConfig: function () {
-            return config;
-        },
         getWidgetList: function () {
             return widgetlist;
         },
-        getInstanceList: function () {
-            return instancelist;
-        }
     };
+
     function addOptionsModal() {
-            $(optionsModal)
-                .prependTo($(document.body))
+        $(optionsModal)
+            .prependTo($(document.body))
             .addClass("modal fade")
             .attr("role", "dialog")
             .append(
@@ -101,6 +93,7 @@ Olive = (function (config = {}) {
                     )
                 ));
     }
+
     function addWidgetAddButton() {
         $(widgetAddButton)
             .appendTo($(document.body))
@@ -110,31 +103,25 @@ Olive = (function (config = {}) {
                 $(optionsModal).modal('show');
             });
     }
+
     function instantiateGrid() {
         widgetlist.forEach(function (entry) {
-            if (entry.type === "Grid") { // hardcoded name for "Grid" type - assume having one ??
+            if (entry.type === "Grid") { // hardcoded name for "Grid" type - assume having one ?? - basically searching for grid widget
                 gridinstance = Object.assign({}, entry);
             }
         });
     }
+
     function readAndSetGridConfig() {
         config.indexurl = $(url).val();
         config.token = $(token).val();
         config.indexfilename = $(indexfilename).val();
-        gridinstance.setContent(config);
-    }
-    function getAndRenderGridData() {
-        gridinstance.getData();
-        $.when(gridinstance.getDataAjax).done(function () {
-            gridinstance.render();
-        });
     }
     $(optionsModalSubmitButton).click(function (e) {
         e.preventDefault();
         instantiateGrid();
         readAndSetGridConfig();
-        getAndRenderGridData();
-        Olive.addInstance(gridinstance);
+        gridinstance.render(config); // render grid widget with params passed from form
         $(optionsModal).modal('hide');
     });
     $(function () {

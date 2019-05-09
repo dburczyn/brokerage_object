@@ -1,4 +1,4 @@
-(function (Grid,Olive) {
+(function () {
     var jobStatics = {
         bgcolor: "#c9cadc",
         icon: "fas fa-briefcase fa-3x",
@@ -25,47 +25,35 @@
     var filenamefield = document.createElement('input');
     var createform = document.createElement('div');
     var expandedWidgetView = document.createElement('div');
-
-
-
-
+    var modalcontainer = document.createElement('div');
+    var widgetAddButton = document.createElement('button');
+    var gridrendercontent;
     var job = {
-        url: "defaultcontenturl",
-        token: "defaulttoken",
-        name: "defaultname",
-        type: "JobTile",
-        createdat: "defaultcreatedate",
-        updatedat: "defaultupdatedate",
-        datetype: "defaultdatetype",
-        setContent: function (content) {
-            this.indexurl = (content.indexurl || '');
-            this.indexfilename = (content.indexfilename || '');
-            this.name = (content.name || '');
-            this.type = (content.type || '');
-            this.createdat = (content.createdat || '');
-            this.updatedat = (content.updatedat || '');
-            this.datetype = (content.datetype || '');
-            this.token = (content.token || '');
-        },
-        render: function () {
+         type: "JobTile",
+        render: function (renderdata, gridrendercontent) {
             widgetRepresentation = document.createElement('div');
-            jobtileinstance = this;
-            createFrontWidgetTile();
-         //   console.log(jobtileinstance);
-
-            addNewButtonHandler();
-           // createInnerWidgetModal();
-          //  console.log(widgetRepresentation);
-            return widgetRepresentation;
-        }
+            jobtileinstance = renderdata;
+            if (typeof gridrendercontent !== 'undefined') {
+                gridrendercontent.token = gridrendercontent.token;
+                gridrendercontent.indexurl = gridrendercontent.indexurl;
+            }
+            createFrontWidgetTile(gridrendercontent);
+                      return widgetRepresentation;
+        },
+        makeCreateButton: function (gridrendercontent) {
+            gridrendercontent = gridrendercontent;
+                $(widgetAddButton)
+                  .prependTo($(document.body))
+                  .addClass("btn btn-info")
+                  .text('NEW ');
+                  addNewButtonHandler(gridrendercontent);
+        },
     };
-
     function setWidgetAuthHeader(request) {
-
-            request.setRequestHeader("Authorization", "token " + Olive.getConfig().token);
-
+        if (this.token !== "") {
+            request.setRequestHeader("Authorization", "token " + this.token);
+        }
     }
-
     function getJobtypeFromRadio() {
         var jobtype;
         var jobtypesradio = document.getElementsByName('jobtype');
@@ -77,7 +65,6 @@
         }
         return jobtype;
     }
-
     function produceWidgetInstanceContent() {
         widgetInstanceContent = {};
         widgetInstanceContent.description = $(filecontentfield).val();
@@ -86,16 +73,15 @@
         widgetInstanceContent.createdat = $(createdatfield).val();
         widgetInstanceContent.updatedat = $(updatedatfield).val();
         widgetInstanceContent.datetype = getJobtypeFromRadio();
-        widgetInstanceContent.type = jobtileinstance.type;
+        widgetInstanceContent.type = job.type;
         widgetInstanceContent.name = $(filenamefield).val();
         return widgetInstanceContent;
     }
-
     function makeCreateForm() {
-
-           $(widgetRepresentation) .append(
+        $(modalcontainer).empty();
+        $(modalcontainer).append(
             $(createform)
-            .addClass("modal fade")
+            .addClass("modal")
             .attr("role", "dialog")
             .append(
                 $('<div/>')
@@ -244,15 +230,14 @@
                     )
                 )));
     }
-
-    function prepareDeleteWidgetContentUrl() {
-        return Olive.getConfig().indexurl + "/" + currentresponse.name;
+    function prepareDeleteWidgetContentUrl(gridrendercontent) {
+        alert(gridrendercontent);
+        return gridrendercontent.indexurl + "/" + currentresponse.name;
     }
-
-    function deleteWidgetContentFile() {
+    function deleteWidgetContentFile(gridrendercontent) {
         $.ajax({
-                url: prepareDeleteWidgetContentUrl(),
-                beforeSend: setWidgetAuthHeader.bind(this),
+                url: prepareDeleteWidgetContentUrl(gridrendercontent),
+                beforeSend: setWidgetAuthHeader.bind(gridrendercontent),
                 type: 'DELETE',
                 data: '{"message": "delete file","sha":"' + currentresponse.sha + '" }',
             })
@@ -260,36 +245,31 @@
                 $(expandedWidgetView).modal('hide');
             });
     }
-
-    function prepareCreateWidgetContentUrl() {
-        return Olive.getConfig().indexurl + '/' + widgetInstanceContent.updatedat;
+    function prepareCreateWidgetContentUrl(gridrendercontent) {
+        return gridrendercontent.indexurl + '/' + widgetInstanceContent.updatedat;
     }
-
-    function createWidgetContentFile() {
+    function createWidgetContentFile(gridrendercontent) {
         produceWidgetInstanceContent();
         $.ajax({
-                url: prepareCreateWidgetContentUrl(),
-                beforeSend: setWidgetAuthHeader.bind(this),
+                url: prepareCreateWidgetContentUrl(gridrendercontent),
+                beforeSend: setWidgetAuthHeader.bind(gridrendercontent),
                 type: 'PUT',
                 data: '{"message": "create file","content":"' + btoa(JSON.stringify(widgetInstanceContent)) + '" }',
             })
             .done(function () {
                 $(createform).modal('hide');
                 if (widgetInstanceContent.updatedat !== widgetInstanceContent.createdat) {
-                    deleteWidgetContentFile();
+                    deleteWidgetContentFile(gridrendercontent);
                 }
             });
     }
-
-    function addCreateFormSubmitHandler() {
+    function addCreateFormSubmitHandler(gridrendercontent) {
         $(createform).on('submit', function (e) {
             e.preventDefault();
-            createWidgetContentFile();
+            createWidgetContentFile(gridrendercontent);
         });
     }
-
-    function createFrontWidgetTile() {
-        //console.log(Olive);
+    function createFrontWidgetTile(gridrendercontent) {
         var parsedcreatedat = new Date(parseInt(jobtileinstance.createdat)).toLocaleDateString(jobStatics.locale, jobStatics.localeOptions);
         var parsedupdatedat = new Date(parseInt(jobtileinstance.updatedat)).toLocaleDateString(jobStatics.locale, jobStatics.localeOptions);
         $(widgetRepresentation)
@@ -303,12 +283,10 @@
                 .append(
                     $("<div/>")
                     .addClass("boxes-align")
-                    .attr("id",jobtileinstance.updatedat)
-
-    .on('click', function () {
-        showInnerWidgetModal($(this).attr("id"));
-    })
-
+                    .attr("id", jobtileinstance.updatedat)
+                    .on('click', function () {
+                        showInnerWidgetModal($(this).attr("id"),gridrendercontent);
+                    })
                     .append(
                         $("<div/>")
                         .addClass("small-box")
@@ -331,15 +309,15 @@
                         .append(
                             $("<h5/>")
                             .text("Created: " + parsedcreatedat)
-                        ))));
-
+                        ))))
+            .append(modalcontainer);
     }
-
-    function createInnerWidgetModal() {
-        $(widgetRepresentation) .append(
+    function createInnerWidgetModal(gridrendercontent) {
+        $(modalcontainer).empty();
+        $(modalcontainer).append(
             $(expandedWidgetView)
-            .addClass("modal fade")
-           .attr("role", "dialog")
+            .addClass("modal")
+            .attr("role", "dialog")
             .append(
                 $('<div/>')
                 .addClass("modal-dialog")
@@ -358,7 +336,7 @@
                         )
                         .append(
                             $('<img>')
-                           .attr("src", unencodedcontent.picture)
+                            .attr("src", unencodedcontent.picture)
                         )
                     )
                     .append(
@@ -381,7 +359,7 @@
                         )
                         .append(
                             $("<p/>")
-                         .text(unencodedcontent.description)
+                            .text(unencodedcontent.description)
                         )
                         .append(
                             $("<p/>")
@@ -440,9 +418,8 @@
                                 if (action === false) {
                                     return false;
                                 }
-                                deleteWidgetContentFile();
+                                deleteWidgetContentFile(gridrendercontent);
                             })
-
                         )
                         .append(
                             $('<button/>')
@@ -453,9 +430,10 @@
                             .text("Edit")
                             .on('click', function (e) {
                                 e.stopPropagation();
+                                $(expandedWidgetView).modal('hide');
                                 createform = document.createElement('div');
                                 makeCreateForm();
-                                addCreateFormSubmitHandler();
+                                addCreateFormSubmitHandler(gridrendercontent);
                                 populateEditForm();
                                 $(createform).modal('show');
                             })
@@ -463,33 +441,25 @@
                     )
                 )));
     }
-
-
-
-
-
-    function addNewButtonHandler() {
-        $(Grid.addbutton)
+    function addNewButtonHandler(gridrendercontent) {
+        $(widgetAddButton)
             .unbind('click')
             .on('click', function (e) {
                 e.stopPropagation();
                 createform = document.createElement('div');
                 makeCreateForm();
-                addCreateFormSubmitHandler();
+                addCreateFormSubmitHandler(gridrendercontent);
                 $(createdatfield).val(new Date().getTime());
                 $(updatedatfield).val($(createdatfield).val());
+                $(filenamefield).val('');
+                $(filecontentfield).val('');
+                $(emailaddressfield).val('');
+                $(eventpicturefield).val('');
+             $(modalcontainer).appendTo($(document.body));
                 $(createform).modal('show');
             });
     }
-
-
-
-
-
-
-
     function populateEditForm() {
-
         updatedat = new Date().getTime();
         $(updatedatfield).val(updatedat);
         $(createdatfield).val(unencodedcontent.createdat);
@@ -499,45 +469,28 @@
         $(eventpicturefield).val(unencodedcontent.picture);
         var typeseditedradionew = document.getElementsByName('jobtype');
         for (var j = 0, l = typeseditedradionew.length; j < l; j++) {
-
             if (unencodedcontent.datetype === typeseditedradionew[j].value) {
-                console.log("found: " + unencodedcontent.datetype);
                 typeseditedradionew[j].checked = true;
                 break;
             }
         }
-
-
-
-        console.log("form populated");
     }
-
-
-
-
-
-
-
-    function showInnerWidgetModal(id) {
+    function showInnerWidgetModal(id,gridrendercontent) {
         $.ajax({
-                url: Olive.getConfig().indexurl + "/" + id,
-                beforeSend: setWidgetAuthHeader.bind(this),
+                url: gridrendercontent.indexurl + "/" + id,
+                beforeSend: setWidgetAuthHeader.bind(gridrendercontent),
                 dataType: 'json'
             })
             .done(function (response) {
                 currentresponse = response;
                 unencodedcontent = JSON.parse(atob(response.content));
                 expandedWidgetView = document.createElement('div');
-                createInnerWidgetModal();
+                createInnerWidgetModal(gridrendercontent);
                 $(expandedWidgetView).modal('show');
-              //  addDeleteButtonHandler();
-             //   addEditButtonHandler();
             })
             .fail(function () {
                 alert('That entry is no longer avaliable');
             });
     }
-
-
     Olive.add(job);
-})(Grid,Olive);
+})();
